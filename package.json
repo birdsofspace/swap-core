@@ -39,6 +39,9 @@
     "frontend"
   ],
   "dependencies": {
-    "@truffle/dashboard-hardhat-plugin": "^0.2.15"
+    "@openzeppelin/contracts": "^2.5.0",
+    "@truffle/dashboard-hardhat-plugin": "^0.2.15",
+    "@uniswap/lib": "^4.0.1-alpha",
+    "@uniswap/v2-core": "^1.0.1"
   }
 }
