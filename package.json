@@ -4,7 +4,6 @@
   "description": "Dapps Smartcontract Boilerplate",
   "scripts": {
     "test": "hardhat test",
-    "frontend": "yarn workspace frontend",
     "deploy": "npx hardhat run scripts/deploy.js --network truffle",
     "truffle-dashboard": "truffle dashboard"
   },

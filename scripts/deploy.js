@@ -1,78 +1,45 @@
-// This is a script for deploying your contracts. You can adapt it to deploy
-// yours, or create new ones.
+const { ethers } = require('hardhat');
 
-const path = require("path");
+// Deploy function
+async function deploy() {
+   [account] = await ethers.getSigners();
+   deployerAddress = account.address;
+   console.log(`Deploying contracts using ${deployerAddress}`);
 
-async function main() {
+   //Deploy WETH
+   const weth = await ethers.getContractFactory('WETH');
+   const wethInstance = await weth.deploy();
 
-  const contractName = "Token";
-  // This is just a convenience check
-  if (network.name === "hardhat") {
-    console.warn(
-      "You are trying to deploy a contract to the Hardhat Network, which" +
-      "gets automatically created and destroyed every time. Use the Hardhat" +
-      " option '--network localhost'"
-    );
-  }
+   console.log(`WETH deployed to : ${wethInstance.address}`);
 
-  // ethers is available in the global scope
-  const [deployer] = await ethers.getSigners();
-  console.log(
-    "Deploying the contracts with the account:",
-    await deployer.getAddress()
-  );
+   //Deploy Factory
+   const factory = await ethers.getContractFactory('UniswapV2Factory');
+   const factoryInstance = await factory.deploy(deployerAddress);
 
-  console.log("Account balance:", (await deployer.getBalance()).toString());
+   console.log(`Factory deployed to : ${factoryInstance.address}`);
 
-  const Token = await ethers.getContractFactory(contractName);
-  const token = await Token.deploy();
-  await token.deployed();
+   //Deploy Router passing Factory Address and WETH Address
+   const router = await ethers.getContractFactory('UniswapV2Router02');
+   const routerInstance = await router.deploy(
+      factoryInstance.address,
+      wethInstance.address
+   );
+   await routerInstance.deployed();
 
-  console.log("Token address:", token.address);
+   console.log(`Router V02 deployed to :  ${routerInstance.address}`);
 
-  // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(token);
+   //Deploy Multicall (needed for Interface)
+   const multicall = await ethers.getContractFactory('Multicall');
+   const multicallInstance = await multicall.deploy();
+   await multicallInstance.deployed();
+
+   console.log(`Multicall deployed to : ${multicallInstance.address}`);
+
 }
 
-function saveFrontendFiles(token) {
-  const fs = require("fs");
-  const contractsDir = path.join(__dirname, "..", "frontend", "public");
-
-  if (!fs.existsSync(contractsDir)) {
-    fs.mkdirSync(contractsDir);
-  }
-  var smartContract = JSON.parse(
-    fs.readFileSync(path.join(contractsDir, "smartcontract.json"), "utf8")
-  );
-
-  const TokenArtifact = artifacts.readArtifactSync("Token");
-  const abi = TokenArtifact.abi;
-  const contractAddress = token.address;
-  try {
-    smartContract.results.push({
-      json_abi: abi,
-      contract_address: contractAddress,
-      contract_name: "Token",
-    });
-  } catch (error) {
-    smartContract = {
-      results: [{
-        json_abi: abi,
-        contract_address: contractAddress,
-        contract_name: "Token",
-      }]
-    };
-  }
-
-  fs.writeFileSync(
-    path.join(contractsDir, "smartcontract.json"),
-    JSON.stringify(smartContract, null, 2)
-  );
-}
-
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+deploy()
+   .then(() => process.exit(0))
+   .catch((error) => {
+      console.error(error);
+      process.exit(1);
+   });
